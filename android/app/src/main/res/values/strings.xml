@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VoiceTranslate</string>
+    <string name="accessibility_service_description">VoiceTranslate uses this service to continue listening and translating speech in the background, even when other apps are in the foreground. This enables real-time translation accessibility.</string>
+</resources>
