@@ -79,7 +79,14 @@ class _AppInitializerState extends State<AppInitializer> {
       _translationService = TranslationService();
       _ttsService = TTSService();
 
-      await _speechService.initialize();
+      final speechReady = await _speechService.initialize();
+      if (!speechReady) {
+        setState(() {
+          _initError = 'Speech recognition is not available on this device';
+        });
+        return;
+      }
+
       await _ttsService.initialize();
 
       setState(() {

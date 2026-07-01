@@ -14,6 +14,10 @@ class TranslationEntry {
   });
 }
 
+class _Sentinel {
+  const _Sentinel();
+}
+
 class AppState {
   final bool isListening;
   final bool isProcessing;
@@ -21,6 +25,7 @@ class AppState {
   final String currentTranslation;
   final String targetLanguage;
   final String sourceLanguage;
+  final String detectedSourceLanguage;
   final List<TranslationEntry> history;
   final String? error;
   final bool ttsEnabled;
@@ -33,6 +38,7 @@ class AppState {
     this.currentTranslation = '',
     this.targetLanguage = 'es',
     this.sourceLanguage = 'auto',
+    this.detectedSourceLanguage = 'auto',
     this.history = const [],
     this.error,
     this.ttsEnabled = true,
@@ -46,8 +52,9 @@ class AppState {
     String? currentTranslation,
     String? targetLanguage,
     String? sourceLanguage,
+    String? detectedSourceLanguage,
     List<TranslationEntry>? history,
-    String? error,
+    Object? error = const _Sentinel(),
     bool? ttsEnabled,
     bool? textDisplayEnabled,
   }) {
@@ -58,8 +65,9 @@ class AppState {
       currentTranslation: currentTranslation ?? this.currentTranslation,
       targetLanguage: targetLanguage ?? this.targetLanguage,
       sourceLanguage: sourceLanguage ?? this.sourceLanguage,
+      detectedSourceLanguage: detectedSourceLanguage ?? this.detectedSourceLanguage,
       history: history ?? this.history,
-      error: error,
+      error: error is _Sentinel ? this.error : error as String?,
       ttsEnabled: ttsEnabled ?? this.ttsEnabled,
       textDisplayEnabled: textDisplayEnabled ?? this.textDisplayEnabled,
     );

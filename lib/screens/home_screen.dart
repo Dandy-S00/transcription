@@ -148,9 +148,9 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  state.sourceLanguage == 'auto'
+                  state.detectedSourceLanguage == 'auto'
                       ? 'Auto-detect'
-                      : SupportedLanguages.getByCode(state.sourceLanguage).name,
+                      : SupportedLanguages.getByCode(state.detectedSourceLanguage).name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,

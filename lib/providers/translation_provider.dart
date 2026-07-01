@@ -102,12 +102,12 @@ class TranslationProvider extends ChangeNotifier {
       final result = await _translationService.translate(
         text: text,
         targetLanguage: _state.targetLanguage,
-        sourceLanguage: _state.sourceLanguage,
+        sourceLanguage: 'auto',
       );
 
       _state = _state.copyWith(
         currentTranslation: result.translatedText,
-        sourceLanguage: result.detectedSourceLanguage,
+        detectedSourceLanguage: result.detectedSourceLanguage,
         isProcessing: false,
       );
 
