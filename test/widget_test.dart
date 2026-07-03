@@ -3,7 +3,7 @@ import 'package:voice_translate/main.dart';
 
 void main() {
   testWidgets('App builds without errors', (WidgetTester tester) async {
-    await tester.pumpWidget(const VoiceTranslateApp());
-    expect(find.text('VoiceTranslate'), findsOneWidget);
+    await tester.pumpWidget(const AppInitializer());
+    expect(find.text('Initializing VoiceTranslate...'), findsOneWidget);
   });
 }

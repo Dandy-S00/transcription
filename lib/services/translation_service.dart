@@ -93,10 +93,19 @@ class TranslationService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      if (data is! List || data.isEmpty || data[0] is! List) {
+        throw TranslationException(
+          'Unexpected response format from translation service',
+        );
+      }
       final translations = data[0] as List;
-      final translatedText =
-          translations.map((t) => t[0] as String).join('');
-      final detectedLang = data[2] as String? ?? sourceLanguage;
+      final translatedText = translations
+          .where((t) => t != null && t is List && t.isNotEmpty && t[0] != null)
+          .map((t) => t[0].toString())
+          .join('');
+      final detectedLang = (data.length > 2 && data[2] is String)
+          ? data[2] as String
+          : sourceLanguage;
 
       return TranslationResult(
         translatedText: translatedText,

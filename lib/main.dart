@@ -17,29 +17,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const VoiceTranslateApp());
-}
-
-class VoiceTranslateApp extends StatelessWidget {
-  const VoiceTranslateApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'VoiceTranslate',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFFE94560),
-          secondary: const Color(0xFF0F3460),
-          surface: const Color(0xFF1A1A2E),
-        ),
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
-      home: const AppInitializer(),
-    );
-  }
+  runApp(const AppInitializer());
 }
 
 class AppInitializer extends StatefulWidget {
@@ -52,10 +30,7 @@ class AppInitializer extends StatefulWidget {
 class _AppInitializerState extends State<AppInitializer> {
   bool _isInitialized = false;
   String? _initError;
-
-  late SpeechRecognitionService _speechService;
-  late TranslationService _translationService;
-  late TTSService _ttsService;
+  TranslationProvider? _provider;
 
   @override
   void initState() {
@@ -75,11 +50,11 @@ class _AppInitializerState extends State<AppInitializer> {
       }
 
       // Initialize services
-      _speechService = SpeechRecognitionService();
-      _translationService = TranslationService();
-      _ttsService = TTSService();
+      final speechService = SpeechRecognitionService();
+      final translationService = TranslationService();
+      final ttsService = TTSService();
 
-      final speechReady = await _speechService.initialize();
+      final speechReady = await speechService.initialize();
       if (!speechReady) {
         setState(() {
           _initError = 'Speech recognition is not available on this device';
@@ -87,9 +62,14 @@ class _AppInitializerState extends State<AppInitializer> {
         return;
       }
 
-      await _ttsService.initialize();
+      await ttsService.initialize();
 
       setState(() {
+        _provider = TranslationProvider(
+          speechService: speechService,
+          translationService: translationService,
+          ttsService: ttsService,
+        );
         _isInitialized = true;
       });
     } catch (e) {
@@ -102,37 +82,66 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_initError != null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF1A1A2E),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(),
+        home: Scaffold(
+          backgroundColor: const Color(0xFF1A1A2E),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Color(0xFFE94560),
+                    size: 64,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _initError!,
+                    style: const TextStyle(color: Colors.white70, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _initError = null;
+                      });
+                      _initializeServices();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE94560),
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!_isInitialized) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(),
+        home: const Scaffold(
+          backgroundColor: Color(0xFF1A1A2E),
+          body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Color(0xFFE94560),
-                  size: 64,
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE94560)),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 24),
                 Text(
-                  _initError!,
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _initError = null;
-                    });
-                    _initializeServices();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE94560),
-                  ),
-                  child: const Text('Retry'),
+                  'Initializing VoiceTranslate...',
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
                 ),
               ],
             ),
@@ -141,34 +150,28 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    if (!_isInitialized) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF1A1A2E),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE94560)),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'Initializing VoiceTranslate...',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ChangeNotifierProvider(
-      create: (_) => TranslationProvider(
-        speechService: _speechService,
-        translationService: _translationService,
-        ttsService: _ttsService,
+    // Provider wraps MaterialApp so all routes (History, Settings)
+    // pushed via Navigator.push can access TranslationProvider
+    return ChangeNotifierProvider.value(
+      value: _provider!,
+      child: MaterialApp(
+        title: 'VoiceTranslate',
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(),
+        home: const HomeScreen(),
       ),
-      child: const HomeScreen(),
+    );
+  }
+
+  ThemeData _buildTheme() {
+    return ThemeData(
+      colorScheme: ColorScheme.dark(
+        primary: const Color(0xFFE94560),
+        secondary: const Color(0xFF0F3460),
+        surface: const Color(0xFF1A1A2E),
+      ),
+      useMaterial3: true,
+      fontFamily: 'Roboto',
     );
   }
 }

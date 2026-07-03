@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/translation_state.dart';
@@ -64,7 +65,11 @@ class TranslationProvider extends ChangeNotifier {
     _state = _state.copyWith(isListening: true, error: null);
     notifyListeners();
 
-    await _speechService.startListening();
+    // Use the device's system locale for speech recognition so it can
+    // transcribe whatever language is being spoken around the user
+    final systemLocale = ui.PlatformDispatcher.instance.locale;
+    final localeId = '${systemLocale.languageCode}_${systemLocale.countryCode ?? systemLocale.languageCode.toUpperCase()}';
+    await _speechService.startListening(localeId: localeId);
   }
 
   Future<void> stopListening() async {
@@ -137,7 +142,9 @@ class TranslationProvider extends ChangeNotifier {
       if (_state.isListening && !_speechService.isListening) {
         await Future.delayed(const Duration(milliseconds: 500));
         if (_state.isListening) {
-          await _speechService.startListening();
+          final systemLocale = ui.PlatformDispatcher.instance.locale;
+          final localeId = '${systemLocale.languageCode}_${systemLocale.countryCode ?? systemLocale.languageCode.toUpperCase()}';
+          await _speechService.startListening(localeId: localeId);
         }
       }
     } catch (e) {
@@ -155,7 +162,9 @@ class TranslationProvider extends ChangeNotifier {
       if (_state.isListening) {
         Future.delayed(const Duration(milliseconds: 300), () {
           if (_state.isListening) {
-            _speechService.startListening();
+            final systemLocale = ui.PlatformDispatcher.instance.locale;
+            final localeId = '${systemLocale.languageCode}_${systemLocale.countryCode ?? systemLocale.languageCode.toUpperCase()}';
+            _speechService.startListening(localeId: localeId);
           }
         });
       }
